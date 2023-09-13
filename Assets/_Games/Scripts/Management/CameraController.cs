@@ -6,7 +6,6 @@ public class CameraController : MonoBehaviour
 {
     [SerializeField] private Transform player;
     private Vector3 offset = new Vector3(0, 10, -10);
-    private float speed = 20f;
 
     // Update is called once per frame
     void Update()
@@ -16,7 +15,7 @@ public class CameraController : MonoBehaviour
 
     private Vector3 CameraFollowPlayer()
     {
-        transform.position = Vector3.Lerp(transform.position, player.transform.position + offset, Time.deltaTime * speed);
+        transform.position = player.transform.position + offset;
         return transform.position;
     }
 }
