@@ -21,6 +21,9 @@ public class SpawnObject : MonoBehaviour
     }
 
     [SerializeField] private List<Pool> pools;
+
+    public static List<GameObject> listObjRed = new List<GameObject>();
+
     protected Dictionary<string, Queue<GameObject>> dictionaryPool;
 
     private void Start()
@@ -35,10 +38,16 @@ public class SpawnObject : MonoBehaviour
             {
                 float randomPosx = Random.Range(-4, 4);
                 float randomPosz = Random.Range(-4, 4);
-                GameObject obj = Instantiate(pool.prefabs, new Vector3(randomPosx, -2f, randomPosz), Quaternion.identity);
+                Vector3 positionPrefabs = new Vector3(randomPosx, -2f, randomPosz);
+                GameObject obj = Instantiate(pool.prefabs, positionPrefabs, Quaternion.identity);
                 obj.transform.SetParent(pool.parentObject.transform);
                 obj.SetActive(false);
                 objectPool.Enqueue(obj);
+
+                if(pool.tag == "red")
+                {
+                    listObjRed.Add(obj);
+                }
             }
 
             dictionaryPool.Add(pool.tag, objectPool);

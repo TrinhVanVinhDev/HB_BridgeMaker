@@ -7,14 +7,17 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private GameObject player;
     [SerializeField] private GameObject bricksCollection;
+    [SerializeField] private GameObject bricksZonePool;
     [SerializeField] private Transform platformTranform;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Joystick joystick;
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private Material materialBlue;
     [SerializeField] private float movingSpeed;
 
     private List<GameObject> listBrick = new List<GameObject>();
     private int oldChild;
+    private int listCount;
 
 
     public static PlayerController Instaise;
@@ -28,22 +31,45 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         RaycastHit hit;
-        Vector3 rayCastPoint = new Vector3(player.transform.position.x, platformTranform.position.y, player.transform.position.z);
+        Vector3 rayCastPoint = new Vector3(player.transform.position.x, player.transform.position.y - 1f, player.transform.position.z);
         Physics.Raycast(rayCastPoint, transform.TransformDirection(new Vector3(joystick.Direction.x, 0f, joystick.Direction.y)), out hit, 1f, layerMask);
         if(hit.collider != null)
         {
-            if (hit.collider.CompareTag("blue"))
+            oldChild = bricksCollection.transform.childCount;
+            if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Blue"))
             {
-                oldChild = bricksCollection.transform.childCount;
                 hit.collider.gameObject.transform.SetParent(bricksCollection.transform);
                 if(oldChild != bricksCollection.transform.childCount)
                 {
                     listBrick.Add(hit.collider.gameObject);
-                    listBrick[listBrick.Count].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[listBrick.Count-1].transform.position.y + 0.2f, bricksCollection.transform.position.z);
-                    //for (int i = 0; i < listBrick.Count; i++)
-                    //{
-                    //    listBrick[i].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[i].transform.position.y + 0.2f, bricksCollection.transform.position.z);
-                    //}
+
+                    if(listBrick.Count == 1)
+                    {
+                        listBrick[0].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[0].transform.position.y + 0.2f, bricksCollection.transform.position.z);
+                    } else if(listBrick.Count > 1)
+                    {
+                        listBrick[listBrick.Count - 1].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[listBrick.Count - 2].transform.position.y + 0.2f, bricksCollection.transform.position.z);
+                    }
+                }
+            }
+
+            if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Bridge"))
+            {
+                if (listCount != listBrick.Count && !hit.collider.CompareTag("Blue"))
+                {
+                    if (listBrick.Count > 0 && bricksCollection.transform.childCount > 0)
+                    {
+                        listCount = listBrick.Count;
+                        listBrick[listBrick.Count - 1].gameObject.SetActive(false);
+                        listBrick[listBrick.Count - 1].gameObject.transform.SetParent(bricksZonePool.transform);
+                        listBrick.RemoveAt(listBrick.Count - 1);
+                        hit.collider.gameObject.tag = "Blue";
+                        hit.collider.gameObject.GetComponent<MeshRenderer>().material = materialBlue;
+                        //if(bricksCollection.transform.childCount > listBrick.Count)
+                        //{
+                        //    bricksCollection.transform.GetChild(bricksCollection.transform.childCount - 1).SetParent(bricksZonePool.transform);
+                        //}
+                    }
                 }
             }
         }

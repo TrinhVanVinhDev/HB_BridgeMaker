@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         spawnObject.OnSpawnObject("cube", Quaternion.identity);
+        spawnObject.OnSpawnObject("red", Quaternion.identity);
     }
 
     public void OnInit() { }

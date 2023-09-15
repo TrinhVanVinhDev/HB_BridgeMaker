@@ -4,7 +4,9 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - blue
+  - Bridge
+  - Blue
+  - Red
   layers:
   - Default
   - TransparentFX
@@ -13,8 +15,8 @@ TagManager:
   - Water
   - UI
   - Blue
-  - 
-  - 
+  - Bridge
+  - Red
   - 
   - 
   - 
