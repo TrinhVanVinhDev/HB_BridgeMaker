@@ -69,4 +69,9 @@ public class SpawnObject : MonoBehaviour
         dictionaryPool[tag].Enqueue(objectToSpawn);
         return objectToSpawn;
     }
+
+    public static void RemoveItem(int index)
+    {
+        listObjRed.RemoveAt(index);
+    }
 }

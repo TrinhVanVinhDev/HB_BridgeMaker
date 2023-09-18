@@ -31,7 +31,7 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         RaycastHit hit;
-        Vector3 rayCastPoint = new Vector3(player.transform.position.x, player.transform.position.y - 1f, player.transform.position.z);
+        Vector3 rayCastPoint = player.transform.position;
         Physics.Raycast(rayCastPoint, transform.TransformDirection(new Vector3(joystick.Direction.x, 0f, joystick.Direction.y)), out hit, 1f, layerMask);
         if(hit.collider != null)
         {
