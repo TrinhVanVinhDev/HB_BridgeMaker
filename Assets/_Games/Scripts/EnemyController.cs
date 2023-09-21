@@ -5,11 +5,21 @@ using UnityEngine.AI;
 
 public class EnemyController : MonoBehaviour
 {
+
+    public static EnemyController Instaise;
+
+    private void Awake()
+    {
+        Instaise = this;
+    }
+
     [SerializeField] private GameObject enemy;
     [SerializeField] private GameObject bricksCollection;
     [SerializeField] private GameObject bricksZonePool;
-    [SerializeField] private Transform platformTranform;
+    [SerializeField] private Transform platformTranformLv1;
     [SerializeField] private Transform platformTranformLv2;
+    [SerializeField] private Transform victoryZone;
+    [SerializeField] private Transform bridgesToVictory;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private List<Transform> bridges;
     [SerializeField] private NavMeshAgent agent;
@@ -18,150 +28,176 @@ public class EnemyController : MonoBehaviour
 
     private float minDistane;
     private Vector3 positionMoving;
-    private int indexList;
+    private Vector3 movingDirection;
+    private Vector3 bridgeTaget;
+    private Transform platformTranform;
+    private Transform platformTranformNext;
     private int listCount = 0;
     private int oldChild;
-    private float checkDistane;
+    private bool movingInPlatform = true;
 
     private List<GameObject> listBrick = new List<GameObject>();
+
+    private SpawnObject spawnObject;
 
     // Update is called once per frame
     void Update()
     {
         RaycastHit hit;
         Vector3 pointEnemy = enemy.transform.position;
-        Physics.Raycast(pointEnemy, Vector3.forward, out hit, 1f, layerMask);
-        Debug.DrawRay(pointEnemy, Vector3.forward, Color.green);
-        if (listCount != SpawnObject.listObjRed.Count)
+        transform.rotation = Quaternion.LookRotation(new Vector3(agent.velocity.x, 0f, agent.velocity.z));
+        Physics.Raycast(pointEnemy, transform.TransformDirection(Vector3.forward), out hit, 1f, layerMask);
+
+        Debug.DrawRay(pointEnemy, transform.TransformDirection(Vector3.forward), Color.green);
+        if (hit.collider != null)
         {
-            minDistane = 100f;
-            listCount = SpawnObject.listObjRed.Count;
-            for (int i = 0; i < listCount; i++)
+            if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Door"))
             {
-                float distane = Vector3.Distance(transform.position, SpawnObject.listObjRed[i].transform.position);
-                if (distane < minDistane)
+                platformTranform = platformTranformLv2;
+                platformTranformNext = victoryZone;
+                bridgeTaget = bridgesToVictory.position;
+                movingInPlatform = true;
+                spawnObject.OnSpawnObject("red", platformTranform.position.y);
+                for(int i = 0; i < listBrick.Count; i++)
                 {
-                    minDistane = distane;
-                    indexList = i;
-                    positionMoving = SpawnObject.listObjRed[i].transform.position;
+                    listBrick[i].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[i].transform.position.y + 0.2f, bricksCollection.transform.position.z);
                 }
             }
         }
-
-        checkDistane = Vector3.Distance(pointEnemy, positionMoving);
-        if (SpawnObject.listObjRed.Count == 0)
+        if (Mathf.Abs(platformTranform.position.y - transform.position.y) < 0.5 && movingInPlatform)
         {
-            if(transform.position.y == platformTranform.position.y)
+            if (SpawnObject.listObjRed.Count != 0)
             {
-                minDistane = 100f;
-                for (int j = 0; j < bridges.Count; j++)
+                GetPositionMovingToBrick();
+
+                if (hit.collider != null)
                 {
-                    float distaneBridge = Vector3.Distance(transform.position, bridges[j].transform.position);
-                    if (distaneBridge < minDistane)
+                    if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Red"))
                     {
-                        minDistane = distaneBridge;
-                        positionMoving = bridges[j].transform.position;
+                        oldChild = bricksCollection.transform.childCount;
+                        hit.collider.gameObject.transform.SetParent(bricksCollection.transform);
+                        if (oldChild != bricksCollection.transform.childCount)
+                        {
+                            listBrick.Add(hit.collider.gameObject);
+
+                            if (listBrick.Count == 1)
+                            {
+                                listBrick[0].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[0].transform.position.y + 0.2f, bricksCollection.transform.position.z);
+                            }
+                            else if (listBrick.Count > 1)
+                            {
+                                listBrick[listBrick.Count - 1].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[listBrick.Count - 2].transform.position.y + 0.2f, bricksCollection.transform.position.z);
+                            }
+                            SpawnObject.listObjRed.Remove(hit.collider.gameObject);
+                        }
                     }
                 }
-            }
-
-
-            checkDistane = Vector3.Distance(pointEnemy, positionMoving);
-            if (Mathf.Round(checkDistane) == 0)
+            } else
             {
-                positionMoving = platformTranformLv2.position;
-                agent.Move(Vector3.forward * Time.fixedDeltaTime * agent.speed);
-                Debug.Log(hit.collider);
-                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Bridge"))
+                GetPositionMovingToBridge();
+                if(hit.collider != null)
                 {
-                    hit.collider.gameObject.tag = "Red";
-                    hit.collider.gameObject.GetComponent<MeshRenderer>().material = materialRed;
-                    //if (listCount != listBrick.Count && !hit.collider.CompareTag("Blue"))
-                    //{
-                    //    if (listBrick.Count > 0 && bricksCollection.transform.childCount > 0)
-                    //    {
-                    //    }
-                    //}
+                    if(hit.collider.gameObject.layer == LayerMask.NameToLayer("Bridge"))
+                    {
+                        positionMoving = new Vector3(enemy.transform.position.x, platformTranformNext.position.y, platformTranformNext.position.z);
+                        movingInPlatform = false;
+                    }
                 }
-            }
-            else
-            {
-
             }
         } else
         {
-            if (Mathf.Round(checkDistane) == 0)
+            if (hit.collider != null)
             {
-                oldChild = bricksCollection.transform.childCount;
-                if (SpawnObject.listObjRed[indexList] != null)
+                if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Bridge") && listBrick.Count != 0)
                 {
-                    SpawnObject.listObjRed[indexList].transform.SetParent(bricksCollection.transform);
-                    listBrick.Add(SpawnObject.listObjRed[indexList]);
-                    SpawnObject.RemoveItem(indexList);
-                    if (listBrick.Count == 1)
+                    if (listCount != listBrick.Count && !hit.collider.CompareTag("Red"))
                     {
-                        listBrick[0].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[0].transform.position.y + 0.2f, bricksCollection.transform.position.z);
+                        listCount = listBrick.Count;
+                        SpawnObject.listObjRed.Add(listBrick[listBrick.Count - 1].gameObject);
+                        listBrick[listBrick.Count - 1].gameObject.transform.SetParent(bricksZonePool.transform);
+                        listBrick[listBrick.Count - 1].gameObject.transform.position = CreateRandomPosition();
+                        listBrick[listBrick.Count - 1].gameObject.transform.rotation = Quaternion.identity;
+                        listBrick.RemoveAt(listBrick.Count - 1);
+                        hit.collider.gameObject.tag = "Red";
+                        hit.collider.gameObject.GetComponent<MeshRenderer>().material = materialRed;
                     }
-                    else if (listBrick.Count > 1)
-                    {
-                        listBrick[listBrick.Count - 1].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[listBrick.Count - 2].transform.position.y + 0.2f, bricksCollection.transform.position.z);
-                    }
+                } else
+                {
+                    positionMoving = new Vector3(enemy.transform.position.x, platformTranform.position.y, platformTranform.position.z);
+                    movingInPlatform = true;
                 }
+
             }
         }
-        //if(blocked)
-        //{
-
-        //}
-        //RaycastHit hit;
-        //Vector3 rayCastPoint = new Vector3(enemy.transform.position.x, enemy.transform.position.y - 1f, enemy.transform.position.z);
-        //Physics.Raycast(rayCastPoint, transform.TransformDirection(positionMoving), out hit, 1f, layerMask);
-        //Debug.DrawRay(rayCastPoint, transform.TransformDirection( positionMoving), Color.green);
-        //if (hit.collider != null)
-        //{
-        //    oldChild = bricksCollection.transform.childCount;
-        //    if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Red"))
-        //    {
-        //        hit.collider.gameObject.transform.SetParent(bricksCollection.transform);
-        //        if (oldChild != bricksCollection.transform.childCount)
-        //        {
-        //            listBrick.Add(hit.collider.gameObject);
-
-        //            if (listBrick.Count == 1)
-        //            {
-        //                listBrick[0].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[0].transform.position.y + 0.2f, bricksCollection.transform.position.z);
-        //            }
-        //            else if (listBrick.Count > 1)
-        //            {
-        //                listBrick[listBrick.Count - 1].transform.position = new Vector3(bricksCollection.transform.position.x, listBrick[listBrick.Count - 2].transform.position.y + 0.2f, bricksCollection.transform.position.z);
-        //            }
-        //        }
-        //    }
-
-        //    if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Bridge"))
-        //    {
-        //        if (listCount != listBrick.Count && !hit.collider.CompareTag("Blue"))
-        //        {
-        //            if (listBrick.Count > 0 && bricksCollection.transform.childCount > 0)
-        //            {
-        //                listCount = listBrick.Count;
-        //                listBrick[listBrick.Count - 1].gameObject.SetActive(false);
-        //                listBrick[listBrick.Count - 1].gameObject.transform.SetParent(bricksZonePool.transform);
-        //                listBrick.RemoveAt(listBrick.Count - 1);
-        //                hit.collider.gameObject.tag = "Red";
-        //                hit.collider.gameObject.GetComponent<MeshRenderer>().material = materialBlue;
-        //            }
-        //        }
-        //    }
-        //}
-
-        OnMoving(positionMoving);
+        OnMoving(positionMoving, movingDirection);
     }
-    private void OnMoving(Vector3 movingDirection)
+    private void OnMoving(Vector3 positionMoving, Vector3 movingDirection)
     {
-        //transform.position = Vector3.Lerp(transform.position, agent.nextPosition, 0.3f);
         agent.SetDestination(positionMoving);
-        //agent.Move(movingDirection * Time.fixedDeltaTime * agent.speed);
-        //transform.rotation = Quaternion.LookRotation(movingDirection, Vector3.up);
+        agent.Move(movingDirection * Time.deltaTime * agent.speed);
+    }
+
+    private Vector3 GetPositionMovingToBrick()
+    {
+        minDistane = 100f;
+        listCount = SpawnObject.listObjRed.Count;
+        for (int i = 0; i < listCount; i++)
+        {
+            float distane = Vector3.Distance(transform.position, SpawnObject.listObjRed[i].transform.position);
+            if (distane < minDistane)
+            {
+                minDistane = distane;
+                positionMoving = SpawnObject.listObjRed[i].transform.position;
+            }
+        }
+        return positionMoving;
+    }
+    private void GetPositionMovingToBridge()
+    {
+        minDistane = 100f;
+        if (bridgeTaget != Vector3.zero)
+        {
+            positionMoving = bridgeTaget;
+        } else
+        {
+            for (int j = 0; j < bridges.Count; j++)
+            {
+                float distaneBridge = Vector3.Distance(transform.position, bridges[j].transform.position);
+                if (distaneBridge < minDistane)
+                {
+                    minDistane = distaneBridge;
+                    positionMoving = bridges[j].transform.position;
+                }
+            }
+            bridgeTaget = positionMoving;
+        }
+    }
+
+    public void OnInit()
+    {
+        platformTranform = platformTranformLv1;
+        platformTranformNext = platformTranformLv2;
+        spawnObject = SpawnObject.Instaise;
+    }
+    private Vector3 CreateRandomPosition()
+    {
+        float xPosition;
+        float yPosition;
+        float zPosition;
+        if (platformTranform == platformTranformLv2)
+        {
+            xPosition = Random.Range(-20, 20);
+            zPosition = Random.Range(60, 90);
+            yPosition = 8.5f;
+
+        } else
+        {
+            xPosition = Random.Range(-20, 20);
+            zPosition = Random.Range(0, 25);
+            yPosition = -2f;
+        }
+
+        Vector3 position = new Vector3(xPosition, yPosition, zPosition);
+        return position;
     }
 }

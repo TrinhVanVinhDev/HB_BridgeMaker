@@ -26,7 +26,7 @@ public class SpawnObject : MonoBehaviour
 
     protected Dictionary<string, Queue<GameObject>> dictionaryPool;
 
-    private void Start()
+    public void OnInit()
     {
         dictionaryPool = new Dictionary<string, Queue<GameObject>>();
 
@@ -36,15 +36,12 @@ public class SpawnObject : MonoBehaviour
 
             for (int i = 0; i < pool.size; i++)
             {
-                float randomPosx = Random.Range(-4, 4);
-                float randomPosz = Random.Range(-4, 4);
-                Vector3 positionPrefabs = new Vector3(randomPosx, -2f, randomPosz);
-                GameObject obj = Instantiate(pool.prefabs, positionPrefabs, Quaternion.identity);
+                GameObject obj = Instantiate(pool.prefabs);
                 obj.transform.SetParent(pool.parentObject.transform);
                 obj.SetActive(false);
                 objectPool.Enqueue(obj);
 
-                if(pool.tag == "red")
+                if (pool.tag == "red")
                 {
                     listObjRed.Add(obj);
                 }
@@ -54,7 +51,7 @@ public class SpawnObject : MonoBehaviour
         }
     }
 
-    public GameObject OnSpawnObject(string tag, Quaternion rotation)
+    public GameObject OnSpawnObject(string tag, float yPosition = -2f)
     {
         if(!dictionaryPool.ContainsKey(tag))
         {
@@ -65,7 +62,10 @@ public class SpawnObject : MonoBehaviour
         GameObject objectToSpawn = dictionaryPool[tag].Dequeue();
 
         objectToSpawn.SetActive(true);
-        objectToSpawn.transform.rotation = rotation;
+        objectToSpawn.transform.position = CreateRandomPosition(yPosition);
+        objectToSpawn.transform.rotation = Quaternion.identity;
+
+
         dictionaryPool[tag].Enqueue(objectToSpawn);
         return objectToSpawn;
     }
@@ -73,5 +73,24 @@ public class SpawnObject : MonoBehaviour
     public static void RemoveItem(int index)
     {
         listObjRed.RemoveAt(index);
+    }
+    private Vector3 CreateRandomPosition(float yPosition)
+    {
+        float xPosition;
+        float zPosition;
+        if (yPosition == -2f)
+        {
+            xPosition = Random.Range(1, 20);
+            zPosition = Random.Range(1, 20);
+
+        }
+        else
+        {
+            xPosition = Random.Range(1, 20);
+            zPosition = Random.Range(60, 80);
+        }
+
+        Vector3 position = new Vector3(xPosition, yPosition, zPosition);
+        return position;
     }
 }

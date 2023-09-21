@@ -6,22 +6,25 @@ public class GameManager : MonoBehaviour
 {
     private SpawnObject spawnObject;
 
+    private List<Vector3> listPosition = new List<Vector3>();
+
     // Start is called before the first frame update
     void Start()
     {
-        OnInit();
         spawnObject = SpawnObject.Instaise;
+        spawnObject.OnInit();
+        
         PlayerController.Instaise.OnInit();
-
-
+        EnemyController.Instaise.OnInit();
+        for (int i = 0; i < 10; i++)
+        {
+            OnInit();
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    void OnInit()
     {
-        spawnObject.OnSpawnObject("cube", Quaternion.identity);
-        spawnObject.OnSpawnObject("red", Quaternion.identity);
+        spawnObject.OnSpawnObject("blue");
+        spawnObject.OnSpawnObject("red");
     }
-
-    public void OnInit() { }
 }
