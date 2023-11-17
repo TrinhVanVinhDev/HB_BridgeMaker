@@ -37,7 +37,8 @@ public class PlayerController : MonoBehaviour
         RaycastHit hit;
         Vector3 rayCastPoint = player.transform.position;
         Physics.Raycast(rayCastPoint, new Vector3(joystick.Direction.x, 0f, joystick.Direction.z), out hit, 1f, layerMask);
-        Debug.DrawRay(rayCastPoint, joystick.Direction, Color.red);
+
+        movingDirection = new Vector3(joystick.Horizontal, transform.position.y, joystick.Vertical);
         if (hit.collider != null)
         {
             if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Door"))
@@ -87,9 +88,6 @@ public class PlayerController : MonoBehaviour
                         hit.collider.gameObject.GetComponent<MeshRenderer>().material = materialBlue;
                     }
                 }
-            } else
-            {
-                movingDirection = new Vector3(joystick.Horizontal, transform.position.y, joystick.Vertical);
             }
         }
 
